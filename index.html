@@ -1680,8 +1680,8 @@ function drawPlayer() {
   blit(jijiSprite(wIdx, pose, pose === 'walk' ? Math.floor(player.anim) % FR : 0), x, y, false);
 }
 
-// 警察の視界コーン。onTop は RUSH の明滅の上に描き直すとき（赤＋白の二重の縁でくっきり見せる）
-function drawCones(onTop) {
+// 警察の視界コーン（RUSH中も通常と同じ見え方）
+function drawCones() {
   const playing = mode === 'playing' || mode === 'gauge';
   for (const p of police) {
     if (p.flying) continue;
@@ -1689,14 +1689,8 @@ function drawCones(onTop) {
     ctx.beginPath(); ctx.moveTo(sx(p.x), sy(p.y));
     ctx.arc(sx(p.x), sy(p.y), stage.view, p.face - POLICE_HALF, p.face + POLICE_HALF);
     ctx.closePath();
-    if (onTop) {
-      ctx.fillStyle = inside ? 'rgba(255,0,40,.5)' : 'rgba(255,20,50,.3)'; ctx.fill();
-      ctx.lineJoin = 'round'; ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(90,0,10,.9)'; ctx.stroke();
-      ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke();
-    } else {
-      ctx.fillStyle = p.alert ? 'rgba(255,40,40,.6)' : inside ? 'rgba(255,60,60,.45)' : 'rgba(255,80,80,.2)'; ctx.fill();
-      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,90,90,.6)'; ctx.stroke();
-    }
+    ctx.fillStyle = p.alert ? 'rgba(255,40,40,.6)' : inside ? 'rgba(255,60,60,.45)' : 'rgba(255,80,80,.2)'; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,90,90,.6)'; ctx.stroke();
   }
 }
 function draw() {
@@ -1709,7 +1703,7 @@ function draw() {
   const VW = W / S, VH = H / S;
   drawWorld(VW, VH);
 
-  drawCones(false);   // 警察の視界コーン
+  drawCones();   // 警察の視界コーン
   drawRange();
 
   const ents = [];
@@ -1751,11 +1745,7 @@ function draw() {
     g.addColorStop(0, 'rgba(8,8,14,.55)'); g.addColorStop(1, 'rgba(8,8,14,.8)');
     ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
   }
-  if (rush && mode !== 'menu' && mode !== 'result') {
-    drawRushBg();
-    // RUSH中は警察の視界を明滅の上に描き直して、埋もれないようにする
-    ctx.save(); ctx.setTransform(DPR * S, 0, 0, DPR * S, shx * DPR, shy * DPR); drawCones(true); ctx.restore();
-  }
+  if (rush && mode !== 'menu' && mode !== 'result') drawRushBg();
   for (const f of fx) {
     const k = f.life / f.max;
     if (f.type === 'hotflash') {   // 先バレ：画面の縁が金色に光る
@@ -2163,11 +2153,9 @@ function endRush() {
 function drawRushBg() {
   const now = performance.now() / 1000;
   ctx.save();
-  // 明滅は控えめ・ゆっくり（警察の視界が見えなくならないように）
+  // 背景の色かぶりはごく薄く・ゆっくり（警察の視界が通常どおり見えるように）。主役は虹色の枠とテロップ
   ctx.globalCompositeOperation = 'overlay';
-  ctx.fillStyle = `hsla(${(now * 140) % 360},100%,55%,${0.2 + 0.06 * Math.sin(now * 6)})`; ctx.fillRect(0, 0, W, H);
-  ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.035 + 0.02 * Math.sin(now * 4);
-  ctx.fillStyle = rainbowGrad(0, W, now * 2); ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = `hsla(${(now * 90) % 360},100%,55%,${0.07 + 0.02 * Math.sin(now * 3)})`; ctx.fillRect(0, 0, W, H);
   ctx.restore();
   ctx.lineWidth = 10; ctx.strokeStyle = rainbowGrad(0, W, now * 3); ctx.strokeRect(5, 5, W - 10, H - 10);
 }
