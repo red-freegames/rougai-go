@@ -367,7 +367,11 @@ const CFG = {
   timeLimit: 45,
   playerSpeed: 16,
   arena: 360,            // NPCがうろつく左右の幅の最小値（広い画面では画面幅まで広げ、人数も比例して増やす）
-  maxCrowd: 230,         // DQNの上限（重くしない）
+  maxCrowd: 260,         // DQNの上限（重くしない）
+  // DQNだけのテンポ調整（警察には掛けない）
+  dqnSpeedMul: 1.25,     // 歩く速さの倍率（ゲージ中は時間が止まるので、狙いやすさは変わらない）
+  dqnSpawnMul: 0.75,     // 湧く間隔の倍率（小さいほど速く湧く）
+  dqnCrowdMul: 1.15,     // 場にいる人数の倍率
   fleeSpeed: 260,
   friendRate: 0.5,       // 連れについて歩くDQNの割合（群れができる）
   cooldown: [2.7, 3.3],  // 攻撃後のクールタイム（秒）
@@ -1010,7 +1014,7 @@ function newWalker(x, y, heading, speedRange) {
     mode: 'walk', timer: rand(0.5, 3), lookT: 0, scanT: rand(0, 6), baseFace: heading, anim: rand(0, 6) };
 }
 function newDqn(x, y, heading = rand(-Math.PI, Math.PI)) {
-  const d = newWalker(x, y, heading, stage.dqnSpd);
+  const d = newWalker(x, y, heading, stage.dqnSpd.map(v => v * CFG.dqnSpeedMul));
   Object.assign(d, { state: 'walk', vx: 0, vy: 0, alpha: 1, how: '', friend: null, vi: Math.floor(Math.random() * VARIANTS.length) });
   // 激熱DQN（プレイ中の湧きだけ、低確率・同時に2体まで。RUSH中とRUSH直後は湧かない）
   d.hot = mode === 'playing' && !rush && !rushIntro && rushCool <= 0 && Math.random() < CFG.hotRate && dqns.filter(o => o.hot && active(o)).length < 2;
@@ -1069,7 +1073,7 @@ function initWorld(si) {
   viewRx = weapon.rx; resize();   // 縦画面では武器の射程に合わせて縮尺を決め直す
   // 画面の横幅いっぱいに群衆を敷き詰める（広い画面ほど人数も増える）
   arena = Math.max(CFG.arena, W / S / 2 + 60);
-  crowd = Math.min(CFG.maxCrowd, Math.round(stage.dqn * arena / CFG.arena));
+  crowd = Math.min(CFG.maxCrowd, Math.round(stage.dqn * CFG.dqnCrowdMul * arena / CFG.arena));
   combo = 0; justStreak = 0; rush = null; rushIntro = null; revive = null; pendingRush = false; stock = 0; rushCool = 0;
   endless = false; survive = 0; endlessLv = 0; madness = false;
   player = { x: 0, y: 0, anim: 0, atkT: 0 };
@@ -1279,7 +1283,7 @@ function updateNPCs(dt, refill) {
     if (rush && Math.random() < 0.7) { const s = sideSpawn(), d = newDqn(s.x, s.y, s.heading); d.spd *= 1.7; d.timer = rand(2, 4); dqns.push(d); }
     else { const s = edgeSpawn(); dqns.push(newDqn(s.x, s.y, s.heading)); }
     alive++;
-    spawnTimer += stage.spawn * CFG.arena / arena * (rush ? 0.25 : 1);   // 広い画面ほど・RUSH中ほど湧きが速い
+    spawnTimer += stage.spawn * CFG.dqnSpawnMul * CFG.arena / arena * (rush ? 0.25 : 1);   // 広い画面ほど・RUSH中ほど湧きが速い
   }
   if (spawnTimer < 0) spawnTimer = 0;
   while (police.length < stage.police) { const s = edgeSpawn(stage.view + 40); police.push(newPolice(s.x, s.y, s.heading)); }
