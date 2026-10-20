@@ -398,27 +398,27 @@ const CFG = {
 // ===== 武器（全10段階）：rx, ry は射程楕円の半径。at は解放に必要な累計スコア =====
 const WEAPONS = [
   { name: '杖',         rx: 160, ry: 80,  at: 0,     color: '#ffd54a', desc: '足元を払う細い射程。車道のまん中だけ。' },
-  { name: 'こうもり傘', rx: 175, ry: 95,  at: 15000,   color: '#8fd0ff', desc: '広げて振り回す。横に少し伸びた。' },
-  { name: '竹刀',       rx: 190, ry: 110, at: 45000,   color: '#a8e06a', desc: '面！ 車道の端近くまで届く。' },
-  { name: '木刀',       rx: 205, ry: 125, at: 100000,  color: '#e5aa6e', desc: '修学旅行の土産。車道いっぱいをカバー。' },
-  { name: '鉄パイプ',   rx: 220, ry: 145, at: 180000,  color: '#cfd8e3', desc: '道端の手前まで届く鈍い一撃。' },
-  { name: '名刀・正宗', rx: 240, ry: 175, at: 280000,  color: '#7cf0ff', desc: '上下の道端にたむろするDQNまで巻き込める。' },
-  { name: '妖刀・村正', rx: 260, ry: 200, at: 380000,  color: '#ff5a7a', desc: '血を求める妖刀。道端の奥まで斬り払う。' },
-  { name: '薙刀',       rx: 285, ry: 225, at: 450000,  color: '#ffb347', desc: '長柄の大振り。歩道の端まで届く。' },
-  { name: '天叢雲剣',   rx: 320, ry: 260, at: 520000,  color: '#c070ff', desc: '神剣の衝撃波。画面の縦幅ほぼすべてを薙ぐ。' },
-  { name: '無刀流',     rx: 370, ry: 300, at: 600000,  color: '#ffffff', desc: '武器はいらぬ。気合いの衝撃波が画面を覆う。' },
+  { name: 'こうもり傘', rx: 175, ry: 95,  at: 3000,    color: '#8fd0ff', desc: '広げて振り回す。横に少し伸びた。' },
+  { name: '竹刀',       rx: 190, ry: 110, at: 8000,    color: '#a8e06a', desc: '面！ 車道の端近くまで届く。' },
+  { name: '木刀',       rx: 205, ry: 125, at: 18000,   color: '#e5aa6e', desc: '修学旅行の土産。車道いっぱいをカバー。' },
+  { name: '鉄パイプ',   rx: 220, ry: 145, at: 35000,   color: '#cfd8e3', desc: '道端の手前まで届く鈍い一撃。' },
+  { name: '名刀・正宗', rx: 240, ry: 175, at: 60000,   color: '#7cf0ff', desc: '上下の道端にたむろするDQNまで巻き込める。' },
+  { name: '妖刀・村正', rx: 260, ry: 200, at: 100000,  color: '#ff5a7a', desc: '血を求める妖刀。道端の奥まで斬り払う。' },
+  { name: '薙刀',       rx: 285, ry: 225, at: 150000,  color: '#ffb347', desc: '長柄の大振り。歩道の端まで届く。' },
+  { name: '天叢雲剣',   rx: 320, ry: 260, at: 220000,  color: '#c070ff', desc: '神剣の衝撃波。画面の縦幅ほぼすべてを薙ぐ。' },
+  { name: '無刀流',     rx: 370, ry: 300, at: 300000,  color: '#ffffff', desc: '武器はいらぬ。気合いの衝撃波が画面を覆う。' },
 ];
 
 // ===== ステージ（全8）：進むほど湧きが速く、警察が増え、見回しが鋭くなる =====
 const STAGES = [
-  { name: 'センター街',         target: 3500, dqn: 50,  spawn: 0.18,  dqnSpd: [25, 50], police: 2, polSpd: [24, 36], sweep: 1.5, view: 160, ground: '#24362a', side: '#6b6458', road: '#565a63', night: 0 },
-  { name: '道玄坂',             target: 6000, dqn: 58,  spawn: 0.14,  dqnSpd: [28, 56], police: 3, polSpd: [26, 40], sweep: 1.8, view: 165, ground: '#22312a', side: '#665f55', road: '#4f535c', night: .15 },
-  { name: 'スクランブル交差点', target: 10000, dqn: 68,  spawn: 0.11,  dqnSpd: [30, 60], police: 3, polSpd: [28, 44], sweep: 2.1, view: 170, ground: '#1f2b29', side: '#5f5952', road: '#474b55', night: .3 },
-  { name: '竹下通り',           target: 12000, dqn: 78,  spawn: 0.09,  dqnSpd: [32, 64], police: 4, polSpd: [30, 48], sweep: 2.4, view: 175, ground: '#2a2433', side: '#5d5560', road: '#43414f', night: .45 },
-  { name: '歌舞伎町',           target: 25000, dqn: 88,  spawn: 0.07,  dqnSpd: [34, 68], police: 4, polSpd: [33, 52], sweep: 2.8, view: 180, ground: '#1d1626', side: '#4d4352', road: '#36333f', night: .65 },
-  { name: '道頓堀',             target: 45000, dqn: 98,  spawn: 0.055, dqnSpd: [36, 72], police: 5, polSpd: [36, 56], sweep: 3.2, view: 185, ground: '#181424', side: '#463d4b', road: '#302e3a', night: .75 },
-  { name: '秋葉原',             target: 60000, dqn: 108, spawn: 0.045, dqnSpd: [38, 76], police: 5, polSpd: [40, 60], sweep: 3.6, view: 190, ground: '#121426', side: '#3d3a4c', road: '#2b2b38', night: .85 },
-  { name: 'ハロウィンの渋谷',   target: 100000, dqn: 125, spawn: 0.035, dqnSpd: [40, 80], police: 6, polSpd: [44, 66], sweep: 4.0, view: 200, ground: '#160d1c', side: '#3a2f3f', road: '#262430', night: 1 },
+  { name: 'センター街',         target: 2800, dqn: 50,  spawn: 0.18,  dqnSpd: [25, 50], police: 2, polSpd: [24, 36], sweep: 1.5, view: 160, ground: '#24362a', side: '#6b6458', road: '#565a63', night: 0 },
+  { name: '道玄坂',             target: 4200, dqn: 58,  spawn: 0.14,  dqnSpd: [28, 56], police: 3, polSpd: [26, 40], sweep: 1.8, view: 165, ground: '#22312a', side: '#665f55', road: '#4f535c', night: .15 },
+  { name: 'スクランブル交差点', target: 6500, dqn: 68,  spawn: 0.11,  dqnSpd: [30, 60], police: 3, polSpd: [28, 44], sweep: 2.1, view: 170, ground: '#1f2b29', side: '#5f5952', road: '#474b55', night: .3 },
+  { name: '竹下通り',           target: 8500, dqn: 78,  spawn: 0.09,  dqnSpd: [32, 64], police: 4, polSpd: [30, 48], sweep: 2.4, view: 175, ground: '#2a2433', side: '#5d5560', road: '#43414f', night: .45 },
+  { name: '歌舞伎町',           target: 15000, dqn: 88,  spawn: 0.07,  dqnSpd: [34, 68], police: 4, polSpd: [33, 52], sweep: 2.8, view: 180, ground: '#1d1626', side: '#4d4352', road: '#36333f', night: .65 },
+  { name: '道頓堀',             target: 26000, dqn: 98,  spawn: 0.055, dqnSpd: [36, 72], police: 5, polSpd: [36, 56], sweep: 3.2, view: 185, ground: '#181424', side: '#463d4b', road: '#302e3a', night: .75 },
+  { name: '秋葉原',             target: 36000, dqn: 108, spawn: 0.045, dqnSpd: [38, 76], police: 5, polSpd: [40, 60], sweep: 3.6, view: 190, ground: '#121426', side: '#3d3a4c', road: '#2b2b38', night: .85 },
+  { name: 'ハロウィンの渋谷',   target: 62000, dqn: 125, spawn: 0.035, dqnSpd: [40, 80], police: 6, polSpd: [44, 66], sweep: 4.0, view: 200, ground: '#160d1c', side: '#3a2f3f', road: '#262430', night: 1 },
 ];
 const POLICE_HALF = 25 * Math.PI / 180;
 
