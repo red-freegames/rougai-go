@@ -181,7 +181,7 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
   color: #2a1400; background: linear-gradient(90deg, #ffe680, #ffb020); box-shadow: 0 0 18px rgba(255, 200, 40, .5); }
 .badge.gold { background: rgba(255, 207, 63, .14); border-color: var(--gold); color: #ffe9a8; }
 
-/* スマホ縦持ち：横画面のおすすめ */
+/* スマホ横持ち：縦画面のおすすめ */
 .rotate { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; text-align: center;
   padding-block: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -192,7 +192,7 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .phone i { position: absolute; left: 50%; bottom: 6px; width: 16px; height: 4px; margin-left: -8px; border-radius: 4px; background: var(--gold); }
 .rotate-head { margin: 8px 0 0; font-family: var(--display); font-size: 1.45rem; line-height: 1.3; color: var(--gold); text-wrap: balance; }
 .rotate-sub { margin: 0; color: var(--dim); line-height: 1.6; }
-@keyframes turn { 0%, 25% { transform: rotate(0); } 55%, 100% { transform: rotate(-90deg); } }
+@keyframes turn { 0%, 25% { transform: rotate(-90deg); } 55%, 100% { transform: rotate(0); } }
 
 /* 横持ちスマホなど、高さの低い画面ではメニューを詰める */
 @media (max-height: 520px) {
@@ -231,9 +231,20 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 @media (prefers-reduced-motion: reduce) {
   .unlock .rays, .unlock .speedlines, .sparkles span, .unlock.play * { animation: none !important; }
 }
+/* スマホ縦画面：ボタンは2列のグリッド、主要ボタンは横幅いっぱい */
 @media (max-width: 460px) {
+  .title-card { gap: 14px; }
   .title-stats { grid-template-columns: 1fr 1fr; }
+  .title-stats div:last-child { grid-column: 1 / -1; }
+  .title-card .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .title-card .btn-row .btn { width: 100%; padding-inline: .6em; }
+  #b-start { grid-column: 1 / -1; font-size: 1.25rem; padding-block: .8em; }
+  .howto { font-size: .82rem; line-height: 1.6; }
   .panel { padding: 16px; }
+  .result .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .result .btn-row .btn { width: 100%; padding-inline: .5em; }
+  #r-next, #r-share { grid-column: 1 / -1; }
+  .unlock-inner .btn-row { flex-direction: column; align-items: stretch; width: min(100%, 320px); }
 }
 </style>
 </head>
@@ -244,9 +255,9 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 <div id="rotate" class="rotate" hidden>
   <div class="rotate-inner">
     <div class="phone" aria-hidden="true"><i></i></div>
-    <p class="rotate-head">横画面でのプレイを推奨します</p>
-    <p class="rotate-sub">スマホを横向きにすると、渋谷の群衆を広く見渡せます。</p>
-    <button id="rot-ok" class="btn small">このまま縦で遊ぶ</button>
+    <p class="rotate-head">縦画面でのプレイを推奨します</p>
+    <p class="rotate-sub">スマホを縦に持つと、片手でサクッと遊べます。</p>
+    <button id="rot-ok" class="btn small">このまま横で遊ぶ</button>
   </div>
 </div>
 
@@ -481,26 +492,30 @@ const fmt = n => n.toLocaleString('ja-JP');
 // ===== キャンバス =====
 const cv = $('#c');
 const ctx = cv.getContext('2d');
-let W = 0, H = 0, S = 1, DPR = 1;
+let W = 0, H = 0, S = 1, DPR = 1, portrait = false;
+let viewRx = 160;   // 今の武器の射程（横）。縦画面ではこれが画面幅に収まるように縮尺を決める
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = W * DPR; cv.height = H * DPR;
-  S = Math.max(0.45, Math.min(1.4, H / 620, W / 480));
+  portrait = H > W * 1.1;
+  // 縦画面：射程の楕円が横幅に収まる縮尺。横画面・PC：高さ基準
+  S = portrait ? Math.max(0.42, Math.min(1.1, W / Math.max(540, viewRx * 2 + 60)))
+               : Math.max(0.45, Math.min(1.4, H / 620, W / 480));
   checkOrientation();
 }
-// ===== スマホ：縦持ちなら横画面をすすめる =====
+// ===== スマホ：横持ちなら縦画面をすすめる =====
 const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 let rotateDismissed = false;
-function checkOrientation() { $('#rotate').hidden = !(isTouch && H > W && !rotateDismissed); }
+function checkOrientation() { $('#rotate').hidden = !(isTouch && W > H && !rotateDismissed); }
 $('#rot-ok').addEventListener('click', () => { rotateDismissed = true; checkOrientation(); });
-// 出陣時に全画面＋横向き固定を試す（できない端末・ブラウザでは何もしない）
-function goLandscape() {
+// 出陣時に全画面＋縦向き固定を試す（できない端末・ブラウザでは何もしない）
+function goPortrait() {
   if (!isTouch) return;
   try {
     const el = document.documentElement;
     const p = !document.fullscreenElement && el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : Promise.resolve();
-    p.then(() => (screen.orientation && screen.orientation.lock) ? screen.orientation.lock('landscape') : null).catch(() => {});
+    p.then(() => (screen.orientation && screen.orientation.lock) ? screen.orientation.lock('portrait') : null).catch(() => {});
   } catch (e) {}
 }
 window.addEventListener('resize', resize);
@@ -1051,6 +1066,7 @@ function roam(o, dt) {
 let arena = CFG.arena, crowd = 0;
 function initWorld(si) {
   stageIdx = si; stage = STAGES[si]; wIdx = save.equip; weapon = WEAPONS[wIdx];
+  viewRx = weapon.rx; resize();   // 縦画面では武器の射程に合わせて縮尺を決め直す
   // 画面の横幅いっぱいに群衆を敷き詰める（広い画面ほど人数も増える）
   arena = Math.max(CFG.arena, W / S / 2 + 60);
   crowd = Math.min(CFG.maxCrowd, Math.round(stage.dqn * arena / CFG.arena));
@@ -1405,10 +1421,10 @@ function startStage(i) {
   $('#b-quit').hidden = false;
 }
 document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => showScreen('s-' + b.dataset.go)));
-$('#b-start').addEventListener('click', () => { ensureAudio(); goLandscape(); showScreen('s-stages'); });
+$('#b-start').addEventListener('click', () => { ensureAudio(); goPortrait(); showScreen('s-stages'); });
 $('#b-gallery').addEventListener('click', () => { ensureAudio(); showScreen('s-gallery'); });
 $('#b-titles').addEventListener('click', () => { ensureAudio(); showScreen('s-titles'); });
-$('#b-endless').addEventListener('click', () => { ensureAudio(); goLandscape(); startEndless(); });
+$('#b-endless').addEventListener('click', () => { ensureAudio(); goPortrait(); startEndless(); });
 $('#b-quit').addEventListener('click', () => {
   if (endless && (mode === 'playing' || mode === 'gauge')) {   // エンドレスは「やめる」でも記録を残す
     premium = null; rushIntro = null; revive = null; gauge = null; mode = 'playing';
@@ -1624,6 +1640,18 @@ function drawWorld(VW, VH) {
     }
     if (i % 3 === 0) emoji('🌼', sx(i * 150 + 70), sy(FIELD + 50), 22);
   }
+  // 縦画面：道路の上下の空きを、奥へ続く街並みと手前の植え込みで埋める
+  if (portrait) {
+    for (let j = 1; sy(-FIELD - 62 - j * 100) > -60; j++) {
+      const a = Math.max(0.25, 0.8 - j * 0.15);
+      for (let i = i0; i <= i1; i++) emoji(deco[((i + j * 2) % 6 + 6) % 6], sx(i * 150 + (j % 2) * 75), sy(-FIELD - 62 - j * 100), 50 + j * 4, false, 0, a);
+    }
+    const low = st.night > 0.5 ? ['🏮', '🚕', '🌃', '🚏'] : ['🌳', '🌲', '🚲', '🌳'];
+    for (let j = 1; sy(FIELD + 50 + j * 90) < VH + 60; j++) {
+      const a = Math.max(0.3, 0.85 - j * 0.12);
+      for (let i = i0; i <= i1; i++) emoji(low[((i + j) % 4 + 4) % 4], sx(i * 150 + (j % 2) * 75), sy(FIELD + 50 + j * 90), 40 + j * 4, false, 0, a);
+    }
+  }
 }
 function drawRange() {
   if (mode !== 'playing' && mode !== 'gauge') return;
@@ -1757,18 +1785,18 @@ function draw() {
       const sc = 1 + Math.max(0, k - 0.75) * 6;
       ctx.save(); ctx.globalAlpha = Math.min(1, k * 2.5); ctx.translate(W / 2, H * 0.27); ctx.scale(sc, sc);
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      outlined(f.text, 0, 0, `${Math.min(110, W * 0.2)}px ${DISPLAY}`, f.color, '#000', 10, f.glow); ctx.restore();
+      outlined(f.text, 0, 0, `${fitFont(f.text, Math.min(110, W * 0.2), W * 0.9)}px ${DISPLAY}`, f.color, '#000', 10, f.glow); ctx.restore();
     } else if (f.type === 'tally') {
       const ty = fx.some(e => e.type === 'kiwami') ? H * 0.42 + Math.min(200, H * 0.3) / 2 + 36 : H * 0.27 + Math.min(80, W * 0.13);
       ctx.save(); ctx.globalAlpha = Math.min(1, k * 3); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      outlined(f.text, W / 2, ty, `${Math.min(34, W * 0.07)}px ${DISPLAY}`, f.color, '#000', 6, f.color); ctx.restore();
+      outlined(f.text, W / 2, ty, `${fitFont(f.text, Math.min(34, W * 0.07), W * 0.94)}px ${DISPLAY}`, f.color, '#000', 6, f.color); ctx.restore();
     } else if (f.type === 'kiwami') drawKiwami(f);
     else if (f.type === 'toast') {
       ctx.save(); ctx.globalAlpha = Math.min(1, k * 4, (1 - k) * 8); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const tw = Math.min(W - 32, 520), ty = 100;
       ctx.fillStyle = 'rgba(40,28,0,.88)'; ctx.fillRect(W / 2 - tw / 2, ty - 20, tw, 40);
       ctx.strokeStyle = '#ffcf3f'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - tw / 2, ty - 20, tw, 40);
-      outlined(f.text, W / 2, ty, `${Math.min(17, W * 0.038)}px ${DISPLAY}`, '#ffe680', '#000', 3);
+      outlined(f.text, W / 2, ty, `${fitFont(f.text, Math.min(17, W * 0.038), tw - 16)}px ${DISPLAY}`, '#ffe680', '#000', 3);
       ctx.restore();
     }
   }
@@ -1776,7 +1804,7 @@ function draw() {
   if (mode === 'playing' && seenByPolice(player.x, player.y)) {
     ctx.strokeStyle = 'rgba(255,40,40,.7)'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, W - 10, H - 10);
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    outlined('⚠ 警察が見ている！ 今は打つな', W / 2, H - 46, `19px ${DISPLAY}`, '#ff6b6b', '#000', 4);
+    outlined('⚠ 警察が見ている！ 今は打つな', W / 2, H - (portrait ? 84 : 46), `19px ${DISPLAY}`, '#ff6b6b', '#000', 4);
   }
   if (mode === 'gauge') drawGauge();
   if (mode === 'playing' || mode === 'gauge' || mode === 'busted') drawHUD();
@@ -1824,10 +1852,11 @@ function drawGauge() {
   ctx.fillStyle = '#fff'; ctx.fillRect(px - 3, y0 - 12, 6, h + 24);
   ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(px - 3, y0 - 12, 6, h + 24);
   const n = dqns.filter(inRange).length;
-  ctx.font = '700 15px "Zen Kaku Gothic New",sans-serif'; ctx.fillStyle = '#fff';
+  ctx.fillStyle = '#fff';
   const nm = wIdx >= 5 && combo >= 1 ? combo + 1 : 1;   // 次に極を出したときの連チャン倍率
-  ctx.fillText(`射程内 ${n}人 ／ 中 ${fmt(n * 10)}・強 ${fmt(n * 25)}・極 ${fmt(n * 100 * nm)} 点${nm > 1 ? `（×${nm}）` : ''}`, W / 2, y0 + h + 30);
-  ctx.fillText('もう一度タップ / スペースで止めろ！', W / 2, y0 + h + 54);
+  const g1 = `射程内 ${n}人 ／ 中 ${fmt(n * 10)}・強 ${fmt(n * 25)}・極 ${fmt(n * 100 * nm)} 点${nm > 1 ? `（×${nm}）` : ''}`;
+  fitText(g1, 15, W - 24, ZEN, '700'); ctx.fillText(g1, W / 2, y0 + h + 30);
+  fitText('もう一度タップで止めろ！', 15, W - 24, ZEN, '700'); ctx.fillText('もう一度タップで止めろ！', W / 2, y0 + h + 54);
 }
 function drawKiwami(f) {
   const t = f.max - f.life;
@@ -1951,7 +1980,7 @@ function drawPremium() {
 }
 function drawCutIn(p, t, now) {
   const tin = Math.min(1, (t - PT.freeze) / 0.16), tout = Math.max(0, (t - PT.cut + 0.1) / 0.22);
-  const bh = Math.min(H * 0.5, 320), off = (1 - tin) * W * 1.4 - tout * W * 1.6;
+  const bh = portrait ? Math.min(H * 0.62, W * 1.3) : Math.min(H * 0.5, 320), off = (1 - tin) * W * 1.4 - tout * W * 1.6;
   ctx.save();
   ctx.fillStyle = `rgba(0,0,0,${0.55 * (1 - Math.min(1, tout))})`; ctx.fillRect(0, 0, W, H);
   ctx.translate(W / 2 + off, H / 2); ctx.rotate(-0.1);
@@ -1961,21 +1990,28 @@ function drawCutIn(p, t, now) {
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2;   // 帯の中を流れる集中線
   for (let i = 0; i < 34; i++) { const y = rand(-bh / 2, bh / 2), x = rand(-W, W); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + rand(80, 260), y); ctx.stroke(); }
   ctx.fillStyle = rainbowGrad(-W, W, now * 2); ctx.fillRect(-W * 1.2, -bh / 2 - 7, W * 2.4, 7); ctx.fillRect(-W * 1.2, bh / 2, W * 2.4, 7);
-  // ジジイの特殊モーション（振り抜きの構えでぐっと迫る）
-  const fh = bh * 1.15, fw = fh * 520 / 440, zoom = 1 + Math.max(0, 0.25 - (t - PT.freeze)) * 1.6, fx0 = -W * 0.22;
-  const glow = ctx.createRadialGradient(fx0, 0, 0, fx0, 0, bh * 0.7);
+  // ジジイの特殊モーション（振り抜きの構えでぐっと迫る）。縦画面はジジイを上・技名を下に積む
+  const zoom = 1 + Math.max(0, 0.25 - (t - PT.freeze)) * 1.6;
+  const fh = portrait ? bh * 0.6 : bh * 1.15, fw = fh * 520 / 440, fx0 = portrait ? 0 : -W * 0.22, fy0 = portrait ? -bh * 0.13 : bh * 0.05;
+  const glow = ctx.createRadialGradient(fx0, fy0, 0, fx0, fy0, portrait ? bh * 0.42 : bh * 0.7);
   glow.addColorStop(0, p.color + 'cc'); glow.addColorStop(1, p.color + '00');
   ctx.fillStyle = glow; ctx.fillRect(fx0 - bh, -bh / 2, bh * 2, bh);
-  ctx.save(); ctx.translate(fx0, bh * 0.05); ctx.scale(zoom, zoom); ctx.drawImage(p.fig, -fw / 2, -fh / 2, fw, fh); ctx.restore();
+  ctx.save(); ctx.translate(fx0, fy0); ctx.scale(zoom, zoom); ctx.drawImage(p.fig, -fw / 2, -fh / 2, fw, fh); ctx.restore();
   // 技名
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  let fs = Math.min(bh * 0.24, W * 0.085); const tx = W * 0.18;
-  ctx.font = `${fs}px ${DISPLAY}`; const tw = ctx.measureText(p.title).width;
-  if (tw > W * 0.5) fs *= W * 0.5 / tw;   // 狭い画面でも技名がはみ出さない
-  outlined(p.mult >= 2 ? `極み ${p.mult}連チャン！ ×${p.mult}` : 'PREMIUM 極', tx, -bh * 0.3, `${fs * (p.mult >= 2 ? 0.55 : 0.42)}px ${DISPLAY}`, rainbow(now * 2), '#000', 5);
-  const tg = ctx.createLinearGradient(0, -fs / 2, 0, fs / 2); tg.addColorStop(0, '#ffffff'); tg.addColorStop(0.5, '#ffe680'); tg.addColorStop(1, '#ff9d1c');
-  outlined(p.title, tx, 0, `${fs}px ${DISPLAY}`, tg, '#2a0a00', 8, p.color);
-  outlined(WEAPONS[wIdx].name, tx, bh * 0.28, `${fs * 0.5}px ${DISPLAY}`, '#fff', '#000', 4);
+  const label = p.mult >= 2 ? `極み ${p.mult}連チャン！ ×${p.mult}` : 'PREMIUM 極';
+  let fs, tx, yLabel, yTitle, yName;
+  if (portrait) {
+    fs = fitFont(p.title, W * 0.12, W * 0.86); tx = 0; yLabel = -bh * 0.44; yTitle = bh * 0.26; yName = bh * 0.4;
+  } else {
+    fs = Math.min(bh * 0.24, W * 0.085); tx = W * 0.18; yLabel = -bh * 0.3; yTitle = 0; yName = bh * 0.28;
+    ctx.font = `${fs}px ${DISPLAY}`; const tw = ctx.measureText(p.title).width;
+    if (tw > W * 0.5) fs *= W * 0.5 / tw;   // 狭い画面でも技名がはみ出さない
+  }
+  outlined(label, tx, yLabel, `${fitFont(label, fs * (p.mult >= 2 ? 0.55 : 0.42), portrait ? W * 0.84 : W * 0.5)}px ${DISPLAY}`, rainbow(now * 2), '#000', 5);
+  const tg = ctx.createLinearGradient(0, yTitle - fs / 2, 0, yTitle + fs / 2); tg.addColorStop(0, '#ffffff'); tg.addColorStop(0.5, '#ffe680'); tg.addColorStop(1, '#ff9d1c');
+  outlined(p.title, tx, yTitle, `${fs}px ${DISPLAY}`, tg, '#2a0a00', 8, p.color);
+  outlined(WEAPONS[wIdx].name, tx, yName, `${fs * 0.5}px ${DISPLAY}`, '#fff', '#000', 4);
   ctx.restore();
 }
 function drawPremiumFx(p, t) {
@@ -2065,6 +2101,12 @@ function drawPremiumFx(p, t) {
 }
 // ===== 伝説の一撃：黄金の長尺演出（④の代わり） =====
 function fitFont(text, size, maxW) { ctx.font = `${size}px ${DISPLAY}`; const w = ctx.measureText(text).width; return w > maxW ? size * maxW / w : size; }
+// fitFont の書体・太さ指定つき版。ctx.font まで設定して、実際の大きさを返す
+const ZEN = '"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif';
+function fitText(text, size, maxW, face = DISPLAY, weight = '') {
+  ctx.font = `${weight} ${size}px ${face}`; const w = ctx.measureText(text).width, s = w > maxW ? size * maxW / w : size;
+  ctx.font = `${weight} ${s}px ${face}`; return s;
+}
 function drawLegend(p, t, now) {
   const e = t - PT.fx, fade = Math.min(1, (LEGEND_LEN - e) / 0.6), cx = W / 2, cy = H * 0.44, R = Math.hypot(W, H);
   ctx.save(); ctx.globalAlpha = Math.max(0, fade);
@@ -2352,8 +2394,9 @@ function drawHUD() {
   }
   // 左上：ステージとスコア・目標バー
   ctx.textAlign = 'left';
-  ctx.font = '700 12px "Zen Kaku Gothic New",sans-serif'; ctx.fillStyle = '#ffcf3f';
-  ctx.fillText(endless ? 'ENDLESS  エンドレス無双' : `STAGE ${stageIdx + 1}  ${stage.name}`, 14, 12);
+  const stLabel = endless ? 'ENDLESS  エンドレス無双' : `STAGE ${stageIdx + 1}  ${stage.name}`;
+  fitText(stLabel, 12, Math.min(W * 0.34, 260), ZEN, '700'); ctx.fillStyle = '#ffcf3f';
+  ctx.fillText(stLabel, 14, 12);
   outlined(fmt(score), 14, 28, `${endless ? 30 : 24}px ${DISPLAY}`, '#fff', '#000', 4);
   const bw = Math.min(180, W * 0.34);
   if (endless) {   // 包囲の度合い（3分で満タン）
@@ -2373,16 +2416,19 @@ function drawHUD() {
   ctx.textAlign = 'right';
   ctx.font = '700 12px "Zen Kaku Gothic New",sans-serif'; ctx.fillStyle = weapon.color;
   ctx.fillText(`RANK ${wIdx + 1}`, W - 14, 12);
-  const wf = `${Math.min(19, W * 0.042)}px ${DISPLAY}`;
+  const wf = `${fitFont(weapon.name, Math.min(19, W * 0.042), W * 0.24)}px ${DISPLAY}`;
   outlined(weapon.name, W - 14, 28, wf, '#fff', '#000', 4);
   ctx.font = wf; const nw = ctx.measureText(weapon.name).width;
-  ctx.drawImage(weaponIcon(wIdx), W - 14 - nw - 70, 24, 66, 22);
+  const iw = portrait ? 46 : 66, ih = portrait ? 15 : 22;   // 縦画面は武器アイコンを小さめに（中央の時間とぶつからないように）
+  ctx.drawImage(weaponIcon(wIdx), W - 14 - nw - iw - 4, 24 + (22 - ih) / 2, iw, ih);
   ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.font = '700 12px "Zen Kaku Gothic New",sans-serif';
   ctx.fillStyle = stock ? '#ffb38a' : 'rgba(255,255,255,.4)';
   ctx.fillText(`復活ストック ${'◆'.repeat(stock)}${'◇'.repeat(CFG.stockMax - stock)}`, W - 14, 56);
   if (mode === 'playing') {
-    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = '700 13px "Zen Kaku Gothic New",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.65)';
-    ctx.fillText(rush ? 'RUSH中：タップ / スペースで即シバき（1人100点）。警察の視界には注意' : cd > 0 ? 'クールタイム中… 群れができる瞬間を待て' : 'タップ / スペース：時間停止 → ゲージを止めて射程内を一掃', W / 2, H - 14);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillStyle = 'rgba(255,255,255,.65)';
+    const hint = rush ? 'RUSH中：タップで即シバき（1人100点）。警察の視界には注意' : cd > 0 ? 'クールタイム中… 群れができる瞬間を待て' : 'タップ：時間停止 → ゲージを止めて射程内を一掃';
+    fitText(hint, 13, W - 24, ZEN, '700');
+    ctx.fillText(hint, W / 2, H - (portrait ? 54 : 14));   // 縦画面は「やめる」ボタンと重ならないよう少し上に
   }
   ctx.textBaseline = 'alphabetic';
 }
